@@ -683,28 +683,31 @@ define([
                     if (this.iniclick){
                         this.φλ0 = φλ;
                         this.iniclick = false;
-        /*                if (this.coordline)
-                            map.removeLayer(this.coordline);
-                        if (this.ini_marker)
+                        if (this.coordline) {
+                            // Clean up old line.
+                            this.map.removeLayer(this.coordline);
+                        }
+                        /*if (this.ini_marker)
                             map.removeLayer(this.ini_marker);
                             ini_marker.on('click', onMarkerClick); */
+                        this.point.geo(φλ);
+
+                        if (this.pointMarkerEdit) {
+                            this.pointMarkerEdit.setLatLng(φλ);
+                        } else {
+                            this.pointEditMarkerCreate();
+                        }
                     } else {
                         this.iniclick = true;
                         this.φλ1 = φλ;
                         this.coordline = L.polyline([
-                            φλ0,  φλ1
-                        ], {color: '#FF0000', width: 1}).addTo(map);
-                        var res = this.Δl_azimut (φλ0, φλ1);
+                            this.φλ0,  this.φλ1
+                        ], {color: '#FF0000', width: 1}).addTo(this.map);
+                        var res = this.Δl_azimut (this.φλ0, this.φλ1);
+                        console.log(res);
                         /* L.popup().setLatLng(e.latlng)
                         .setContent("≈" + res.Δl_m + " м, ∡ ≈" + res.α + " \nНаправление: " + geo_α (res.α))
                         .openOn(map); */
-                    }
-                    this.point.geo(φλ);
-
-                    if (this.pointMarkerEdit) {
-                        this.pointMarkerEdit.setLatLng(φλ);
-                    } else {
-                        this.pointEditMarkerCreate();
                     }
                 }, this);
             }
