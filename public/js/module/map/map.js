@@ -5,7 +5,7 @@ define([
     'underscore', 'Browser', 'Utils', 'Params', 'knockout', 'm/_moduleCliche', 'globalVM', 'renderer',
     'model/User', 'model/storage', 'Locations', 'leaflet', 'lib/leaflet/extends/L.neoMap', 'm/map/marker',
     'm/photo/status', 'text!tpl/map/map.pug', 'css!style/map/map', 'jquery-ui/draggable', 'jquery-ui/slider',
-    'jquery-ui/effect-highlight', 'css!style/jquery/ui/core', 'css!style/jquery/ui/theme', 'css!style/jquery/ui/slider'
+    'jquery-ui/effect-highlight', 'css!style/jquery/ui/core', 'css!style/jquery/ui/theme', 'css!style/jquery/ui/slider', 'leaflet-sector'
 ], function (_, Browser, Utils, P, ko, Cliche, globalVM, renderer, User, storage, Locations, L, Map, MarkerManager, statuses, pug) {
     'use strict';
 
@@ -700,10 +700,27 @@ define([
                     } else {
                         this.iniclick = true;
                         this.φλ1 = φλ;
-                        this.coordline = L.polyline([
-                            this.φλ0,  this.φλ1
-                        ], {color: '#FF0000', width: 1}).addTo(this.map);
-                        var res = this.Δl_azimut (this.φλ0, this.φλ1);
+                        let res = this.Δl_azimut (this.φλ0, this.φλ1);
+
+                        let pl = L.polyline([this.φλ0, this.φλ1], {color: '#FF0000', weight: 1});
+                        let sc = L.sector({
+                            center: this.φλ0,
+                            innerRadius: 0,
+                            outerRadius: res.Δl_m,
+                            startBearing: Math.floor(Number(res.α) - 22.5),
+                            endBearing: Math.floor(Number(res.α) + 22.5),
+                            fill: true,
+                            fillColor: '#aa0000',
+                            fillOpacity: 0.3,
+                            color: '#FF0000',
+                            opacity: 0.1,
+                            weight: 0
+                        });
+                        this.coordline = new L.LayerGroup();
+                        this.coordline.addLayer(pl);
+                        this.coordline.addLayer(sc);
+                        this.coordline.addTo(this.map);
+
                         console.log(res);
                         /* L.popup().setLatLng(e.latlng)
                         .setContent("≈" + res.Δl_m + " м, ∡ ≈" + res.α + " \nНаправление: " + geo_α (res.α))
