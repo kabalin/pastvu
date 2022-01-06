@@ -19,6 +19,7 @@ services:
 
   redis:
     image: redis:6.0.9
+    command: ["redis-server", "--save", "''"]
     expose:
       - "6379"
 
