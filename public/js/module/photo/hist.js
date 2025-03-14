@@ -4,8 +4,8 @@
  */
 
 define(
-    ['underscore', 'Utils', 'socket!', 'Params', 'knockout', 'knockout.mapping', 'm/_moduleCliche', 'globalVM', 'model/storage', 'm/photo/fields', 'm/photo/status', 'lib/doT', 'text!tpl/photo/hist.pug', 'css!style/photo/hist'],
-    function (_, Utils, socket, P, ko, ko_mapping, Cliche, globalVM, storage, fields, statuses, doT, pug) {
+    ['underscore', 'Utils', 'socket!', 'Params', 'knockout', 'knockout.mapping', 'm/_moduleCliche', 'globalVM', 'model/storage', 'm/photo/fields', 'm/photo/status', 'lib/doT', 'noties', 'moment', 'text!tpl/photo/hist.pug', 'css!style/photo/hist'],
+    function (_, Utils, socket, P, ko, ko_mapping, Cliche, globalVM, storage, fields, statuses, doT, noties, moment, pug) {
         'use strict';
 
         let tplHist;
@@ -45,8 +45,8 @@ define(
 
                 this.getHist(function (err, data) {
                     if (data && data.hists && data.hists.length) {
-                        ko.applyBindings(globalVM, this.$dom[0]);
                         this.renderHist(data);
+                        ko.applyBindings(globalVM, this.$dom[0]);
                     }
 
                     this.show();
@@ -166,6 +166,7 @@ define(
 
                 const newSince = this.newSince;
                 const hightlightNew = newSince > 0;
+                let canRevert = false;
 
                 for (let i = 0; i < data.hists.length; i++) {
                     hist = data.hists[i];
@@ -175,6 +176,7 @@ define(
                     if (hightlightNew && i > 0 && hist.stamp > newSince) {
                         hist.isnew = true;
                     }
+
 
                     hist.user.avatar = hist.user.avatar ? '/_a/h/' + hist.user.avatar : '/img/caps/avatarth.png';
 
@@ -187,6 +189,20 @@ define(
                     if (!hist.values) {
                         hist.values = {};
                     } else {
+                        if (canRevert) {
+                            hist.canRevert = this.parentModule.IAdmin();
+                        }
+                        if (hist.values.s === 5) {
+                            // Public photos history can be reverted.
+                            canRevert = true;
+                        }
+
+                        if (hist.values.s !== undefined && hist.values.s !== 5) {
+                            // Status change to non-public, disable reverting from now on.
+                            canRevert = false;
+                            hist.canRevert = false;
+                        }
+
                         if (hist.values.s !== undefined) {
                             hist.values.s = statusNums[hist.values.s];
                         }
@@ -310,5 +326,33 @@ define(
                         cb.call(ctx, err);
                     });
             },
+            revert: function (stamp) {
+                const self = this;
+
+                if (!stamp) {
+                    return;
+                }
+                const stampTpl = _.template('Восстановить историю на состояние ${ stamp }');
+                noties.confirm({
+                    message: stampTpl({stamp: moment(stamp).format('D MMMM YYYY, HH:mm')}),
+                    okText: 'Да',
+                    cancelText: 'Нет',
+                    onOk: function (initConfirmer) {
+                        initConfirmer.close();
+                        socket.run('photo.restorePointInHistory', {
+                            cid: self.cid,
+                            stamp: stamp,
+                        }, true)
+                            .then(function () {
+                                noties.alert({
+                                    message: 'История восстановлена',
+                                    type: 'success',
+                                    layout: 'topRight',
+                                });
+                                self.create();
+                            });
+                    },
+                });
+            }
         });
     });

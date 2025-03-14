@@ -42,6 +42,10 @@
                 | {{?}}
                 .dotDelimeter ·
                 a.histStamp(data-replace="true", href="/p/{{=it.cid}}?history={{=h.stamp}}") {{=it.fDate(new Date(h.stamp))}}
+                | {{?h.canRevert}}
+                .dotDelimeter ·
+                a.histStamp(data-bind="click: function () {revert({{=h.stamp}})}") [восстановить]
+                | {{?}}
 
             | {{?h.values.s}}
             .info.iconed(style="color: {{=h.values.s.color}};")
